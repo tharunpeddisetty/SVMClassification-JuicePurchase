@@ -1,0 +1,320 @@
+---
+title: "BUAN 6357_Homework1_Peddisetty"
+author: "Tharun Peddisetty"
+date: "9/8/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+pacman::p_load(e1071, ggplot2, caret, rmarkdown, corrplot, knitr)
+search()
+theme_set(theme_classic())
+options(digits = 3)
+```
+
+# 0) Data Import
+```{r}
+data <- read.csv("juice.csv")
+```
+
+# 1) Create data partition
+```{r}
+set.seed(123)
+trainindex <- createDataPartition(data$Purchase, p=0.8, list= FALSE)
+juice_train <- data[trainindex, ]
+juice_test <- data[-trainindex, ]
+```
+
+# 2) SVM Model
+### Below is the SVM model ran with Linear kernel and cost of 0.01. It is able to predict the correct classes of the drinks with 83.5% accuracy.
+```{r}
+
+svm1 <- svm(Purchase~., data=juice_train,kernel= "linear", cost=0.01)
+summary(svm1)
+
+
+ ## Performance Evaluation ##
+pred1 <- predict(svm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# accuracy
+(sum(diag(conf.matrix))) / sum(conf.matrix)
+```
+
+# 3) Training and test error rates
+### Error rate is given by total incorrect classifications divided by total observations. Typically calculated as (1-accuracy)
+
+### For Cost: 0.01
+#### * Training Error rate = 17%
+#### * Test Error rate = 16.5%
+```{r}
+ ## Train Performance Evaluation ##
+pred1 <- predict(svm1, juice_train)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_train$Purchase)
+conf.matrix
+  
+# Train Error
+1-(sum(diag(conf.matrix))) / sum(conf.matrix)
+
+ ## Test Performance Evaluation ##
+pred1 <- predict(svm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# Test Error
+1-(sum(diag(conf.matrix))) / sum(conf.matrix)
+```
+
+
+# 4) Using tune() function to select optimal cost
+### Cost with least error is 0.51 from the  below code with accuracy of 82.5%
+```{r}
+set.seed(123)
+tunesvm1 <- tune(svm, Purchase~., data = juice_train, kernel='linear',
+     ranges = list(cost = seq(0.01,10,by=0.5)))
+
+summary(tunesvm1)
+plot(tunesvm1)
+
+
+  ## Best SVM Model ##
+bestsvm1 <- tunesvm1$best.model
+summary(bestsvm1)
+
+
+bestpred1 <- predict(bestsvm1, juice_test)
+
+# confusion matrix
+conf.matrix2 <- table(Predicted = bestpred1, Actual = juice_test$Purchase)
+conf.matrix2
+
+  # accuracy
+(sum(diag(conf.matrix2))) / sum(conf.matrix2)
+```
+
+# 5) Train and Test errors using best Cost = 3.01
+
+#### * Training Error rate:  16.625
+#### * Test Error rate: 17.5
+
+```{r}
+## Train Performance Evaluation ##
+pred1 <- predict(bestsvm1, juice_train)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_train$Purchase)
+conf.matrix
+  
+# Train error
+print(paste("Training Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+
+ ## Test Performance Evaluation ##
+pred1 <- predict(bestsvm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# Test Error
+print(paste("Test Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+```
+
+# 6) SVM using radial kernel
+### The radial kernel SVM model with cost 0.01 has a predictive accuracy of 61%
+
+#### * Best Model at Cost = 0.51
+#### * Accuracy = 85%
+
+#### * Training Error rate: 15.375%
+#### * Test Error rate: 15%
+```{r}
+svm1 <- svm(Purchase~., data=juice_train,kernel= "radial",cost=0.01)
+summary(svm1)
+
+
+ ## Performance Evaluation ##
+pred1 <- predict(svm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# accuracy
+(sum(diag(conf.matrix))) / sum(conf.matrix)
+
+
+
+ ## Train Performance Evaluation ##
+pred1 <- predict(svm1, juice_train)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_train$Purchase)
+conf.matrix
+  
+# Train Error
+print(paste("Training Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+
+ ## Test Performance Evaluation ##
+pred1 <- predict(svm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# Test Error
+print(paste("Test Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+
+
+#TUNING
+set.seed(123)
+tunesvm1 <- tune(svm, Purchase~., data = juice_train, kernel='radial',
+     ranges = list(cost = seq(0.01,10,by=0.5)))
+
+summary(tunesvm1)
+plot(tunesvm1)
+
+
+  ## Best SVM Model ##
+bestsvm1 <- tunesvm1$best.model
+summary(bestsvm1)
+
+
+bestpred1 <- predict(bestsvm1, juice_test)
+
+# confusion matrix
+conf.matrix2 <- table(Predicted = bestpred1, Actual = juice_test$Purchase)
+conf.matrix2
+
+  # accuracy
+print(paste("Accuracy: ",(sum(diag(conf.matrix2))) / sum(conf.matrix2)))
+
+
+
+ ## Train Performance Evaluation ##
+pred1 <- predict(bestsvm1, juice_train)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_train$Purchase)
+conf.matrix
+  
+# Train error
+print(paste("Training Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+
+ ## Test Performance Evaluation ##
+pred1 <- predict(bestsvm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# Test Error
+print(paste("Test Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+```
+# 7) SVM using polynomial kernel with degree=2
+### The polynomial kernel SVM model with cost 0.01 has a predictive accuracy of 61%
+
+#### * Best Model at Cost = 8.51
+#### * Accuracy = 83%
+
+#### * Training Error rate: 16.25%
+#### * Test Error rate: 17%
+```{r}
+svm1 <- svm(Purchase~., data=juice_train,kernel= "polynomial",degree=2,cost=0.01)
+summary(svm1)
+
+
+ ## Performance Evaluation ##
+pred1 <- predict(svm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# accuracy
+(sum(diag(conf.matrix))) / sum(conf.matrix)
+
+
+
+ ## Train Performance Evaluation ##
+pred1 <- predict(svm1, juice_train)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_train$Purchase)
+conf.matrix
+  
+# Train Error
+1-(sum(diag(conf.matrix))) / sum(conf.matrix)
+
+ ## Test Performance Evaluation ##
+pred1 <- predict(svm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# Test Error
+1-(sum(diag(conf.matrix))) / sum(conf.matrix)
+
+
+#TUNING
+set.seed(123)
+tunesvm1 <- tune(svm, Purchase~., data = juice_train, kernel= "polynomial",degree=2,
+     ranges = list(cost = seq(0.01,10,by=0.5)))
+
+summary(tunesvm1)
+plot(tunesvm1)
+
+
+  ## Best SVM Model ##
+bestsvm1 <- tunesvm1$best.model
+summary(bestsvm1)
+
+
+bestpred1 <- predict(bestsvm1, juice_test)
+
+# confusion matrix
+conf.matrix2 <- table(Predicted = bestpred1, Actual = juice_test$Purchase)
+conf.matrix2
+
+  # accuracy
+print(paste("Accuracy: ",(sum(diag(conf.matrix2))) / sum(conf.matrix2)))
+
+
+ ## Train Performance Evaluation ##
+pred1 <- predict(bestsvm1, juice_train)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_train$Purchase)
+conf.matrix
+  
+# Train error
+print(paste("Training Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+
+ ## Test Performance Evaluation ##
+pred1 <- predict(bestsvm1, juice_test)
+
+# confusion matrix
+conf.matrix <- table(Predicted = pred1, Actual = juice_test$Purchase)
+conf.matrix
+  
+# Test Error
+print(paste("Test Error rate: ",1-(sum(diag(conf.matrix))) / sum(conf.matrix)))
+```
+
+# 8) Best Model
+
+### SVM with radial kernel gives us the best results.
+
+### It has the highest accuracy of 85% when deployed on the test data.
+
+### It also has the least training and test error rate of about 15% each which is almost 1% lesser than other respective error rates.
+
